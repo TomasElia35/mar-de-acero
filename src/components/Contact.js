@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion'; // Importar motion
+import emailjs from 'emailjs-com'; // Importamos EmailJS
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,21 @@ const Contact = () => {
 
   const [hoverButton, setHoverButton] = useState(false);
   const [successMessage, setSuccessMessage] = useState(''); // Estado para el mensaje de éxito
+  const [errorMessage, setErrorMessage] = useState('');     // Estado para el mensaje de error
+
+  // Función para validar los datos
+  const validateForm = () => {
+    const { nombre, apellido, ciudad, correo, mensaje } = formData;
+    if (!nombre || !apellido || !ciudad || !correo || !mensaje) {
+      setErrorMessage('Todos los campos son obligatorios'); // Mostrar error si faltan campos
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(correo)) {
+      setErrorMessage('El correo electrónico no es válido'); // Verificación básica de email
+      return false;
+    }
+    return true;
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,15 +31,22 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Aquí podrías manejar el envío del formulario
-    console.log(formData);
+    
+    // Validamos los datos antes de enviar
+    if (!validateForm()) {
+      return;
+    }
 
-    // Mostrar mensaje de éxito
-    setSuccessMessage('¡Mensaje enviado con éxito!'); // Mensaje de éxito
-    setFormData({ nombre: '', apellido: '', ciudad: '', correo: '', mensaje: '' }); // Limpiar el formulario
-    setTimeout(() => {
-      setSuccessMessage(''); // Ocultar el mensaje después de 3 segundos
-    }, 3000);
+    // Si la validación es exitosa, enviamos el correo
+    emailjs.sendForm('service_cfs915s', 'template_o3lzygb', e.target, '__EZZnctTZ6B-XGZ-')
+      .then((result) => {
+        setSuccessMessage('¡Mensaje enviado con éxito!'); // Mensaje de éxito
+        setErrorMessage(''); // Limpiar mensaje de error
+        setFormData({ nombre: '', apellido: '', ciudad: '', correo: '', mensaje: '' }); // Limpiar formulario
+        setTimeout(() => setSuccessMessage(''), 3000); // Ocultar el mensaje después de 3 segundos
+      }, (error) => {
+        setErrorMessage('Hubo un problema al enviar el mensaje. Inténtalo de nuevo.'); // Mostrar mensaje de error
+      });
   };
 
   // Variantes para la animación
@@ -43,6 +66,10 @@ const Contact = () => {
       >
         Contacto
       </motion.h2>
+
+      {/* Mensaje de error si hay algún problema con el formulario */}
+      {errorMessage && <div style={styles.errorMessage}>{errorMessage}</div>}
+      
       <motion.form 
         onSubmit={handleSubmit} 
         style={styles.form} 
@@ -123,6 +150,7 @@ const Contact = () => {
   );
 };
 
+// Estilos del formulario
 const styles = {
   container: {
     padding: '3rem',
@@ -179,7 +207,12 @@ const styles = {
     marginTop: '1rem',
     color: 'green', // Color del mensaje de éxito
     fontSize: '1.2rem',
-  }
+  },
+  errorMessage: {
+    marginTop: '1rem',
+    color: 'red', // Color del mensaje de error
+    fontSize: '1.2rem',
+  },
 };
 
 export default Contact;
